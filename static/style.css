@@ -201,3 +201,8 @@
     grid-template-columns: 1fr;
     gap: 0.5rem;
 }
+
+/* Theme-specific Mobile Overrides */
+#poster-area.mobile-mode.theme-neon-night #display-date {
+    font-size: 1.125rem; /* Equivalent to text-lg (2 steps down from 2xl) */
+}
