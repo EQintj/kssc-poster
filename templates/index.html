@@ -606,48 +606,67 @@
         }
 
         async function downloadPoster() {
-            const element = document.getElementById('poster-area');
-            const canvas = await html2canvas(element, { useCORS: true, scale: 3 });
-            const baseFileName = `LASERWAR_PRO_POSTER_${Date.now()}`;
+            const btn = document.querySelector('button[onclick="downloadPoster()"]');
+            const originalText = btn.textContent;
+            btn.textContent = "GENERATING AI EXPORT...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
 
-            // Case 1: Browser supports File System Access API
-            if (window.showSaveFilePicker) {
-                try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: `${baseFileName}.png`,
-                        types: [
-                            {
-                                description: 'PNG Image',
-                                accept: { 'image/png': ['.png'] },
-                            },
-                            {
-                                description: 'JPEG Image',
-                                accept: { 'image/jpeg': ['.jpg', '.jpeg'] },
-                            }
-                        ],
-                    });
-                    
-                    const file = await handle.getFile();
-                    const extension = file.name.split('.').pop().toLowerCase();
-                    const mimeType = (extension === 'jpg' || extension === 'jpeg') ? 'image/jpeg' : 'image/png';
-                    
-                    const writable = await handle.createWritable();
-                    canvas.toBlob(async (blob) => {
-                        await writable.write(blob);
-                        await writable.close();
-                    }, mimeType, 0.95);
-                    return;
-                } catch (err) {
-                    if (err.name === 'AbortError') return;
-                    console.error('File Picker Error:', err);
+            try {
+                const element = document.getElementById('poster-area');
+                // Use a slightly lower scale for mobile if needed, but 3 is generally fine for high-quality
+                const canvas = await html2canvas(element, { 
+                    useCORS: true, 
+                    scale: window.innerWidth < 768 ? 2 : 3,
+                    logging: false,
+                    allowTaint: true
+                });
+                
+                const baseFileName = `LASERWAR_POSTER_${Date.now()}`;
+
+                // Case 1: Browser supports File System Access API (Desktop Chrome/Edge)
+                if (window.showSaveFilePicker) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: `${baseFileName}.png`,
+                            types: [{ description: 'PNG Image', accept: { 'image/png': ['.png'] } }],
+                        });
+                        const writable = await handle.createWritable();
+                        canvas.toBlob(async (blob) => {
+                            await writable.write(blob);
+                            await writable.close();
+                        }, 'image/png');
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') return;
+                        console.error('File Picker Error:', err);
+                    }
                 }
-            }
 
-            // Case 2: Traditional Download (Default to PNG)
-            const link = document.createElement('a');
-            link.download = `${baseFileName}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+                // Case 2: Mobile & Standard Fallback (Blob + Object URL)
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${baseFileName}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                }, 'image/png');
+
+            } catch (error) {
+                console.error('Download Failed:', error);
+                alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
 
         setTheme('tactical');
