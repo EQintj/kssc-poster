@@ -361,7 +361,7 @@
 
     <script>
         const themes = {
-            tactical: { bg: 'https://img.youtube.com/vi/RoEGtMTw4sc/maxresdefault.jpg', class: 'theme-tactical' },
+            tactical: { bg: '', class: 'theme-tactical' },
             electronic: { bg: '/static/images/electronic_bg.png', class: 'theme-electronic' },
             zombie: { bg: '/static/images/zombie_bg.png', class: 'theme-zombie' },
             terminator: { bg: '/static/images/terminator_bg.png', class: 'theme-terminator' },
@@ -605,6 +605,18 @@
             feeBox.style.borderColor = 'rgba(255,255,255,0.2)';
         }
 
+        // --- Save & Fallback Logic ---
+        function showSaveModal(dataUrl) {
+            const modal = document.getElementById('save-modal');
+            const img = document.getElementById('save-preview');
+            img.src = dataUrl;
+            modal.style.display = 'flex';
+        }
+
+        function closeSaveModal() {
+            document.getElementById('save-modal').style.display = 'none';
+        }
+
         async function downloadPoster() {
             const btn = document.querySelector('button[onclick="downloadPoster()"]');
             const originalText = btn.textContent;
@@ -614,18 +626,21 @@
 
             try {
                 const element = document.getElementById('poster-area');
-                // Use a slightly lower scale for mobile if needed, but 3 is generally fine for high-quality
+                // Mobile resolution optimization (1.5 - 2 is safer for memory)
+                const isMobile = window.innerWidth < 1024;
                 const canvas = await html2canvas(element, { 
                     useCORS: true, 
-                    scale: window.innerWidth < 768 ? 2 : 3,
+                    scale: isMobile ? 1.5 : 2.5,
                     logging: false,
-                    allowTaint: true
+                    allowTaint: false, // Must be false for toBlob/toDataURL to work
+                    backgroundColor: '#000000'
                 });
                 
                 const baseFileName = `LASERWAR_POSTER_${Date.now()}`;
+                const dataUrl = canvas.toDataURL('image/png');
 
                 // Case 1: Browser supports File System Access API (Desktop Chrome/Edge)
-                if (window.showSaveFilePicker) {
+                if (window.showSaveFilePicker && !isMobile) {
                     try {
                         const handle = await window.showSaveFilePicker({
                             suggestedName: `${baseFileName}.png`,
@@ -643,25 +658,22 @@
                     }
                 }
 
-                // Case 2: Mobile & Standard Fallback (Blob + Object URL)
-                canvas.toBlob((blob) => {
-                    const url = URL.createObjectURL(blob);
+                // Default Behavior: Show Modal for manual save (Best for Mobile Reliability)
+                if (isMobile) {
+                    showSaveModal(dataUrl);
+                } else {
+                    // Desktop simple download
                     const link = document.createElement('a');
-                    link.href = url;
+                    link.href = dataUrl;
                     link.download = `${baseFileName}.png`;
                     document.body.appendChild(link);
                     link.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                    }, 100);
-                }, 'image/png');
+                    setTimeout(() => document.body.removeChild(link), 100);
+                }
 
             } catch (error) {
                 console.error('Download Failed:', error);
-                alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+                alert('이미지 생성 중 오류가 발생했습니다. 모든 이미지(배경 등)가 정상적으로 로드되었는지 확인해 주세요.');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -671,6 +683,12 @@
 
         setTheme('tactical');
     </script>
+    <!-- Save Image Fallback Modal -->
+    <div id="save-modal">
+        <div class="text-white mb-4 text-center font-brand-mono text-sm">이미지 생성이 완료되었습니다.<br>아래 이미지를 <span class="text-orange-500 font-bold">길게 눌러 저장</span>하세요.</div>
+        <img id="save-preview" src="" alt="Poster Preview">
+        <button onclick="closeSaveModal()" class="bg-white text-black px-8 py-3 font-brand-head text-sm tracking-widest hover:bg-gray-200 transition-colors">닫기 (CLOSE)</button>
+    </div>
 </body>
 
 </html>
