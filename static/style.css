@@ -162,3 +162,42 @@
 .status-glow {
     box-shadow: 0 0 15px currentColor;
 }
+
+/* Mobile Optimized View Mode (9:16) */
+#poster-area.mobile-mode {
+    width: 540px;
+    height: 960px;
+}
+
+#poster-area.mobile-mode .p-16 {
+    padding: 2.5rem !important;
+}
+
+#poster-area.mobile-mode #headline {
+    font-size: 58px;
+    margin-bottom: 2rem;
+}
+
+#poster-area.mobile-mode #sub-headline {
+    font-size: 1rem;
+}
+
+#poster-area.mobile-mode .grid-cols-12 {
+    display: flex;
+    flex-direction: column;
+}
+
+#poster-area.mobile-mode .col-span-5 {
+    border-right: none;
+    border-bottom: 2px solid var(--theme-color);
+    padding: 1.5rem !important;
+}
+
+#poster-area.mobile-mode .col-span-7 {
+    padding: 1.5rem !important;
+}
+
+#poster-area.mobile-mode #poster-session-list {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}

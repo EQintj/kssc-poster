@@ -232,6 +232,16 @@
                 id="btn-hellfire">05. HELLFIRE</button>
             <button onclick="setTheme('neon_night')" class="btn-lw btn-neon-night p-3 text-xs font-brand-head text-left"
                 id="btn-neon-night">06. NEON NIGHT</button>
+            
+            <div class="mt-4 pt-4 border-t border-white/10">
+                <label class="text-[10px] font-brand-mono text-gray-400 uppercase mb-2 block">Display Optimization</label>
+                <button onclick="toggleMobileView()" 
+                    class="btn-lw w-full p-3 text-xs font-brand-head text-left flex items-center justify-between" 
+                    id="btn-mobile-view">
+                    <span>📱 MOBILE VERSION</span>
+                    <span id="mobile-status-tag" class="text-[8px] bg-gray-800 px-2 py-0.5 rounded text-gray-400">OFF</span>
+                </button>
+            </div>
         </nav>
         
         <!-- Participation Fee Control -->
@@ -251,8 +261,8 @@
     </aside>
 
     <!-- Preview Area -->
-    <main class="flex-1 bg-black flex items-center justify-center p-8 overflow-hidden">
-        <div id="poster-container" class="relative group scale-[0.85] lg:scale-100">
+    <main class="flex-1 bg-black flex items-center justify-center p-8 overflow-hidden transition-all duration-500" id="main-preview">
+        <div id="poster-container" class="relative group scale-[0.85] lg:scale-100 transition-all duration-500">
 
             <div id="poster-area" class="theme-tactical border-4">
 
@@ -446,7 +456,9 @@
             const area = document.getElementById('poster-area');
             if (!area) return;
 
-            document.querySelectorAll('.btn-lw').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.btn-lw').forEach(btn => {
+                if(btn.id !== 'btn-mobile-view') btn.classList.remove('active');
+            });
             const activeBtn = document.getElementById(`btn-${themeKey}`);
             if (activeBtn) activeBtn.classList.add('active');
             
@@ -458,8 +470,42 @@
                 area.style.background = 'none';
                 area.style.backgroundColor = 'var(--brand-black)';
             }
-            area.className = theme.class + ' border-4 transition-all duration-500';
+            area.className = theme.class + ' border-4 transition-all duration-500' + (isMobileView ? ' mobile-mode' : '');
         }
+
+        let isMobileView = false;
+        function toggleMobileView() {
+            isMobileView = !isMobileView;
+            const area = document.getElementById('poster-area');
+            const btn = document.getElementById('btn-mobile-view');
+            const tag = document.getElementById('mobile-status-tag');
+            const container = document.getElementById('poster-container');
+
+            if (isMobileView) {
+                area.classList.add('mobile-mode');
+                btn.classList.add('active');
+                btn.style.color = 'var(--brand-cyan)';
+                btn.style.borderColor = 'var(--brand-cyan)';
+                tag.textContent = 'ON';
+                tag.className = 'text-[8px] bg-cyan-900/50 px-2 py-0.5 rounded text-cyan-400 border border-cyan-500/30';
+                
+                // Adjust scale for mobile preview if needed
+                container.classList.remove('scale-[0.85]', 'lg:scale-100');
+                container.classList.add('scale-[0.6]', 'lg:scale-[0.8]');
+            } else {
+                area.classList.remove('mobile-mode');
+                btn.classList.remove('active');
+                btn.style.color = '';
+                btn.style.borderColor = '';
+                tag.textContent = 'OFF';
+                tag.className = 'text-[8px] bg-gray-800 px-2 py-0.5 rounded text-gray-400';
+                
+                container.classList.add('scale-[0.85]', 'lg:scale-100');
+                container.classList.remove('scale-[0.6]', 'lg:scale-[0.8]');
+            }
+        }
+
+        setTheme('tactical');
 
         // Participation Fee Logic
         const checkFee = document.getElementById('check-fee');
