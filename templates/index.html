@@ -528,35 +528,70 @@
             feeBox.textContent = e.target.value || '참가비: 무료';
         });
 
-        // Draggable Logic
+        // Draggable Logic (Improved with Touch Support and Scaling)
         let isDragging = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
         let xOffset = 0;
         let yOffset = 0;
+        let initialX;
+        let initialY;
+
+        // Get coordinates from Mouse or Touch
+        const getCoords = (e) => {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        };
+
+        // Get current scaling of the container
+        const getScale = () => {
+            const container = document.getElementById('poster-container');
+            const style = window.getComputedStyle(container);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            return matrix.a || 1; // 'a' is the horizontal scale factor
+        };
 
         feeBox.addEventListener('mousedown', dragStart);
+        feeBox.addEventListener('touchstart', dragStart, { passive: false });
+        
         window.addEventListener('mousemove', drag);
+        window.addEventListener('touchmove', drag, { passive: false });
+        
         window.addEventListener('mouseup', dragEnd);
+        window.addEventListener('touchend', dragEnd);
 
         function dragStart(e) {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
+            const coords = getCoords(e);
+            const scale = getScale();
+            
+            // Adjust initial click position based on scale
+            initialX = coords.x - (xOffset * scale);
+            initialY = coords.y - (yOffset * scale);
+            
             if (e.target === feeBox) {
                 isDragging = true;
                 feeBox.style.borderColor = 'var(--theme-color)';
+                if (e.type === 'touchstart') {
+                    // Prevent scrolling while dragging on touch
+                    // e.preventDefault(); // Might need to be selective
+                }
             }
         }
 
         function drag(e) {
             if (isDragging) {
-                e.preventDefault();
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
+                if (e.cancelable) e.preventDefault();
+                
+                const coords = getCoords(e);
+                const scale = getScale();
+                
+                // Divide delta by scale to move at the same speed as the cursor/finger
+                currentX = (coords.x - initialX) / scale;
+                currentY = (coords.y - initialY) / scale;
+                
                 xOffset = currentX;
                 yOffset = currentY;
+                
                 setTranslate(currentX, currentY, feeBox);
             }
         }
@@ -566,8 +601,6 @@
         }
 
         function dragEnd(e) {
-            initialX = currentX;
-            initialY = currentY;
             isDragging = false;
             feeBox.style.borderColor = 'rgba(255,255,255,0.2)';
         }
